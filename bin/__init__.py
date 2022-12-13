@@ -1,2 +1,2 @@
-from model import Model
-from solver import Solver
+from bin.model import Model
+from bin.solver import Solver

@@ -4,16 +4,18 @@ import pickle
 class Solver(object):
     def __init__(self, model) -> None:
         self.model = model   
-        self.state_history = np.zeros(shape=(self.model.time_horison, self.model.state_dim))
-        self.action_history = np.zeros(shape=(self.model.time_horison, self.model.action_dim))
-        self.noise_history = np.zeros(shape=(self.model.time_horison, self.model.noise_dim))
-        self.reward_history = np.zeros(self.model.time_horison)
+        self.state_history = np.zeros(self.model.time_horizon+1)
+        self.action_history = np.zeros(self.model.time_horizon+1)
+        self.noise_history = np.zeros(self.model.time_horizon+1)
+        self.reward_history = np.zeros(self.model.time_horizon+1)
+        
+        self.value_function = np.zeros(self.model.time_horizon+1)
     
     def run(self, initial_state, policy):
         state = initial_state
         t = 0
-        terminal = True
-        while terminal:
+        terminal = False
+        while not terminal:
             self.state_history[t] = state
             
             action = policy(state)
@@ -30,12 +32,12 @@ class Solver(object):
             t += 1
             
     def save_result(self, file_name='results.json'):
-        res_dict = {
+        self.res_dict = {
             'state': self.state_history,
             'action': self.action_history,
             'noise': self.noise_history,
             'reward': self.reward_history
         }
         
-        with open(f'res/{self.reward_history}', 'wb') as pk:
-            pickle.dump(res_dict, pk, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(f'results/{self.reward_history}', 'wb') as pk:
+            pickle.dump(self.res_dict, pk, protocol=pickle.HIGHEST_PROTOCOL)
