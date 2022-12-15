@@ -3,7 +3,7 @@ from bin.model import Model
 import numpy as np
 
 
-class Model_cash_order(Model):
+class Model_working_capital(Model):
     def __init__(self, state_dim, action_dim, noise_dim, time_horizon, parameter) -> None:
         super().__init__(state_dim, action_dim, noise_dim, time_horizon, parameter)
         
@@ -11,6 +11,7 @@ class Model_cash_order(Model):
         self.c = parameter['unit_order_cost']
         self.w0_dim = parameter['init_investment_level_dim']
         self.R_max = parameter['reward_bound']
+        self.zeta = parameter['targer_level']
         
         # compute w space based on R_max and p?
         self.w_dim = parameter['investment_level_dim']
@@ -43,5 +44,5 @@ class Model_cash_order(Model):
     
     def acceptance_set(self, state, action, t=0):
         (s, w) = self.index2state[state]
-        return self.c*action <= w
+        return w >= self.zeta and self.c*action <= w
         

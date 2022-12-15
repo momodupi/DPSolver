@@ -28,7 +28,7 @@ class Solver(object):
         # vectorize: online post and official doc said it is not used for performance
         # however, because the input has 2 vectors, it can benefit from the vector multiplication
         reward2go = lambda s, a: self.expectation(
-            lambda n: self.model.reward(s, a, n, t) if self.model.acceptance_set(s, a, t) else -self.model.R_max, 
+            lambda n: 0 if self.model.acceptance_set(s, a, t) else -np.inf, 
             t
         )
         value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
@@ -38,7 +38,7 @@ class Solver(object):
         
         for t in tqdm(range(self.model.time_horizon-2, -1, -1)):
             reward2go = lambda s, a: self.expectation(
-                lambda n: self.model.reward(s, a, n, t) + self.value_function[t+1][self.model.update(s, a, n, t)] if self.model.acceptance_set(s, a, t) else -self.model.R_max, 
+                lambda n: self.model.reward(s, a, n, t) + self.value_function[t+1][self.model.update(s, a, n, t)] if self.model.acceptance_set(s, a, t) else -np.inf, 
                 t
             )
             value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
@@ -65,7 +65,7 @@ class Solver(object):
             next_state = self.model.update(state, action, noise, t)
             state = next_state
             
-    def save_result(self, file_name='results.json'):
+    def save_result(self, file_name='results.pickle'):
         self.res_dict = {
             'state': self.state_history,
             'action': self.action_history,
