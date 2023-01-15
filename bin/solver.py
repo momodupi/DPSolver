@@ -19,7 +19,7 @@ class Solver(object):
         
         # set risk measure
         self.risk = self.risk_measure_selector(risk_config)
-
+        
 
     def risk_measure_selector(self, risk_config):
         if risk_config['measure'] == 'CVaR':
@@ -27,13 +27,27 @@ class Solver(object):
         else:
             return self.expectation
             
-               
-        
+
+       
     def expectation(self, f, t):
+        # notes: n: every realization of noise --> noise_space
+        # f(n): every cost2go under each the realization --> support of cost2go
         return np.dot( np.vectorize(lambda n: f(n))(self.model.noise_space), self.model.noise_distribution[t] )
     
     # C-VAR
     def CVaR(self, f, t):
+        # computer VaR: at level a
+        # notes: cdf of f --> cumsum of noise pdf --> since noise_space is [0,1,2,...]
+        # step 1: get all possible value of f:
+        f_support = np.vectorize(lambda n: f(n))(self.model.noise_space)
+        # step 2: sort to get the support of f
+        argsort_f_support = np.argsort(f_support)
+        # step 3: cumsum to get cdf
+        f_cdf = np.cumsum(f_support[argsort_f_support])
+        # f_cdf = np.cumsum(self.model.noise_distribution[t])
+        # f_cdf>a, cost2go is not necessary sorted 
+        VAR = lambda a: np.argmax(f_cdf>a)
+        # CVAR = 1/(1-c) sum(  )
         return
         
 

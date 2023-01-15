@@ -11,6 +11,12 @@ class Model(object):
         self.time_horizon = time_horizon   
         self.reward_bound = parameter['reward_bound'] if 'reward_bound' in parameter else 1e5
         
+        self.s_dim = state_dim
+        self.a_dim = action_dim
+        self.n_dim = noise_dim
+        self.s_space = np.arange(state_dim, dtype=int)
+        self.a_space = np.arange(action_dim, dtype=int)
+        self.n_space = np.arange(noise_dim, dtype=int)
         self.reward_flag = True
         
         # noise distribution can be varied

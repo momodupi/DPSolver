@@ -16,7 +16,6 @@ class Model_working_capital(Model):
         # compute w space based on R_max and p?
         self.w_dim = parameter['investment_level_dim']
         
-        self.s_dim = self.state_dim
         self.state_dim = self.s_dim * self.w_dim
         
         # new state space:
