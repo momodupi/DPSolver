@@ -11,6 +11,8 @@ class Model(object):
         self.time_horizon = time_horizon   
         self.reward_bound = parameter['reward_bound'] if 'reward_bound' in parameter else 1e5
         
+        self.reward_flag = True
+        
         # noise distribution can be varied
         self.noise_distribution = parameter['noise_distriburion'] if 'noise_distriburion' in parameter else np.ones(shape=(self.time_horizon,noise_dim))/noise_dim
         

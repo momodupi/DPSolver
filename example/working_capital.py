@@ -31,6 +31,8 @@ class Model_working_capital(Model):
                 self.index2state[idx] = (s, w)
                 idx += 1
                 
+        self.reward_flag = True
+                
         
     def update(self, state, action, noise, t):
         (s, w) = self.index2state[state]

@@ -22,6 +22,8 @@ class Model_standard_capital(Model_cash_order):
                 self.action2index[(a,z)] = idx
                 self.index2action[idx] = (a, z)
                 idx += 1
+                
+        self.reward_flag = False
         
     def update(self, state, action, noise, t):
         (s, w) = self.index2state[state]

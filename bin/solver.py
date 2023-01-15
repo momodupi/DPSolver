@@ -4,7 +4,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 
 class Solver(object):
-    def __init__(self, model) -> None:
+    def __init__(self, model, risk_config={'measure': 'neutral', 'parameter': None}) -> None:
         self.model = model   
         self.state_history = np.zeros(self.model.time_horizon+1, dtype=int)
         self.action_history = np.zeros(self.model.time_horizon+1, dtype=int)
@@ -14,8 +14,28 @@ class Solver(object):
         self.value_function = np.zeros(shape=(self.model.time_horizon+1, self.model.state_dim))
         self.optimal_action = np.zeros(shape=(self.model.time_horizon+1, self.model.state_dim))
         
+        self.risk_measure = risk_config['measure']
+        self.risk_parameter = risk_config['parameter']
+        
+        # set risk measure
+        self.risk = self.risk_measure_selector(risk_config)
+
+
+    def risk_measure_selector(self, risk_config):
+        if risk_config['measure'] == 'CVaR':
+            return self.CVaR
+        else:
+            return self.expectation
+            
+               
+        
     def expectation(self, f, t):
         return np.dot( np.vectorize(lambda n: f(n))(self.model.noise_space), self.model.noise_distribution[t] )
+    
+    # C-VAR
+    def CVaR(self, f, t):
+        return
+        
 
     def backward(self, multiprocessing=False):
         # used for vectorization
@@ -27,8 +47,9 @@ class Solver(object):
         # compute expected R_T
         # vectorize: online post and official doc said it is not used for performance
         # however, because the input has 2 vectors, it can benefit from the vector multiplication
-        reward2go = lambda s, a: self.expectation(
-            lambda n: 0 if self.model.acceptance_set(s, a, t) else -np.inf, 
+        unacceptance_value = -np.inf if self.model.reward_flag else np.inf
+        reward2go = lambda s, a: self.risk(
+            lambda n: 0 if self.model.acceptance_set(s, a, t) else unacceptance_value, 
             t
         )
         value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
@@ -37,13 +58,16 @@ class Solver(object):
         self.value_function[t] = value_matrix[self.model.state_space, self.action_history[t]]
         
         for t in tqdm(range(self.model.time_horizon-2, -1, -1)):
-            reward2go = lambda s, a: self.expectation(
-                lambda n: self.model.reward(s, a, n, t) + self.value_function[t+1][self.model.update(s, a, n, t)] if self.model.acceptance_set(s, a, t) else -np.inf, 
+            reward2go = lambda s, a: self.risk(
+                lambda n: self.model.reward(s, a, n, t) + self.value_function[t+1][self.model.update(s, a, n, t)] if self.model.acceptance_set(s, a, t) else unacceptance_value, 
                 t
             )
             value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
             
-            self.optimal_action[t] = value_matrix.argmax(axis=1)
+            if self.model.reward_flag:
+                self.optimal_action[t] = value_matrix.argmax(axis=1)
+            else:
+                self.optimal_action[t] = value_matrix.argmin(axis=1)
             self.value_function[t] = value_matrix[self.model.state_space, self.action_history[t]]
 
     def forward(self, initial_state, policy):

@@ -1,5 +1,4 @@
 from bin.model import Model
-
 import numpy as np
 
 
@@ -29,6 +28,7 @@ class Model_cash_order(Model):
                 self.state2index[(s,w)] = idx
                 self.index2state[idx] = (s, w)
                 idx += 1
+        self.reward_flag = True
                 
         
     def update(self, state, action, noise, t):
@@ -45,3 +45,4 @@ class Model_cash_order(Model):
         (s, w) = self.index2state[state]
         return self.c*action <= w
         
+       
