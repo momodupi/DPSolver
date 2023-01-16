@@ -10,7 +10,7 @@ def policy(state):
     return 1
 
 if __name__ == '__main__':
-    parameter = {
+    model_parameter = {
         'unit_selling_price': 10,
         'unit_order_cost': 5,
         'targer_level': 1,
@@ -19,11 +19,18 @@ if __name__ == '__main__':
         'reward_bound': 1000
     }
     
-    m = Model_cash_order(5, 5, 5, 3, parameter)
+    mdp_parameter = {
+        'measure': 'CVaR',
+        'parameter': {'alpha': 0.9}
+    }
+    
+    m = Model_cash_order(5, 5, 5, 3, model_parameter)
     # m = Model_standard_capital(100, 100, 10, 10, parameter)
     # m = Model_working_capital(100, 100, 10, 10, parameter)
     # m = Model_risk_neutral(5, 5, 5, 3, parameter)
-    s = Solver(m)
+    
+    
+    s = Solver(m, mdp_parameter)
     
     s.backward()
     

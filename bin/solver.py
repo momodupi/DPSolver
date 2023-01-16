@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 from multiprocessing import Pool
+from scipy.integrate import quad
 
 class Solver(object):
     def __init__(self, model, risk_config={'measure': 'neutral', 'parameter': None}) -> None:
@@ -43,12 +44,14 @@ class Solver(object):
         # step 2: sort to get the support of f
         argsort_f_support = np.argsort(f_support)
         # step 3: cumsum to get cdf
-        f_cdf = np.cumsum(f_support[argsort_f_support])
-        # f_cdf = np.cumsum(self.model.noise_distribution[t])
-        # f_cdf>a, cost2go is not necessary sorted 
-        VAR = lambda a: np.argmax(f_cdf>a)
-        # CVAR = 1/(1-c) sum(  )
-        return
+        f_cdf = np.cumsum(self.model.noise_distribution[t][argsort_f_support])
+        # step 4: var at a = min{x: F(x) > a}
+        # f_cdf>a, f_cdf is already sorted 
+        # position of f_cdf that make f_cdf>a
+        # recover actual position by using original array
+        VAR = lambda a: f_support[np.argmax(f_cdf>a)]
+        # CVAR = 1/a int_0^a var_r d r
+        return (1/self.risk_parameter['alpha'])*quad(VAR, 0, self.risk_parameter['alpha'])[0]
         
 
     def backward(self, multiprocessing=False):
