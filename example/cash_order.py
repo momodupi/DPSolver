@@ -19,8 +19,7 @@ class Model_cash_order(Model):
         # new state space:
         # s x w
         self.state_space = np.arange(self.state_dim, dtype=int)
-        self.state2index = {}
-        self.index2state = {}
+
         idx = 0
         for s in range(self.s_dim):
             for w in range(self.w_dim):

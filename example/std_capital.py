@@ -14,8 +14,7 @@ class Model_standard_capital(Model_cash_order):
         
         # new action space:
         self.action_space = np.arange(self.action_dim, dtype=int)
-        self.action2index = {}
-        self.index2action = {}
+
         idx = 0
         for a in range(self.a_dim):
             for z in range(self.z_dim):

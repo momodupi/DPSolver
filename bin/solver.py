@@ -4,8 +4,9 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from scipy.integrate import quad
 
+
 class Solver(object):
-    def __init__(self, model, risk_config={'measure': 'neutral', 'parameter': None}) -> None:
+    def __init__(self, model, mdp_parameter={'measure': 'neutral', 'parameter': None}) -> None:
         self.model = model   
         self.state_history = np.zeros(self.model.time_horizon+1, dtype=int)
         self.action_history = np.zeros(self.model.time_horizon+1, dtype=int)
@@ -15,15 +16,15 @@ class Solver(object):
         self.value_function = np.zeros(shape=(self.model.time_horizon+1, self.model.state_dim))
         self.optimal_action = np.zeros(shape=(self.model.time_horizon+1, self.model.state_dim))
         
-        self.risk_measure = risk_config['measure']
-        self.risk_parameter = risk_config['parameter']
+        self.risk_measure = mdp_parameter['measure']
+        self.risk_parameter = mdp_parameter['parameter']
         
         # set risk measure
-        self.risk = self.risk_measure_selector(risk_config)
+        self.risk = self.risk_measure_selector(self.risk_measure)
         
 
-    def risk_measure_selector(self, risk_config):
-        if risk_config['measure'] == 'CVaR':
+    def risk_measure_selector(self, risk_measure):
+        if risk_measure == 'CVaR':
             return self.CVaR
         else:
             return self.expectation
@@ -106,15 +107,18 @@ class Solver(object):
             next_state = self.model.update(state, action, noise, t)
             state = next_state
             
-    def save_result(self, file_name='results.pickle'):
+    def save_result(self, file_name='results'):
         self.res_dict = {
+            'risk': {'measure': self.risk_measure, 'parameter': self.risk_parameter},
+            'time_horizon': self.model.time_horizon,
+            'model': self.model,
             'state': self.state_history,
             'action': self.action_history,
             'noise': self.noise_history,
             'reward': self.reward_history,
             'value_function': self.value_function,
-            'optimal_action': self.optimal_action
+            'optimal_action': self.optimal_action,
         }
         
-        with open(f'results/{file_name}', 'wb') as pk:
+        with open(f'results/{file_name}.pkl', 'wb') as pk:
             pickle.dump(self.res_dict, pk, protocol=pickle.HIGHEST_PROTOCOL)

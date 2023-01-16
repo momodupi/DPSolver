@@ -18,6 +18,10 @@ class Model(object):
         self.a_space = np.arange(action_dim, dtype=int)
         self.n_space = np.arange(noise_dim, dtype=int)
         self.reward_flag = True
+        self.state2index = {}
+        self.index2state = {}
+        self.action2index = {}
+        self.index2action = {}
         
         # noise distribution can be varied
         self.noise_distribution = parameter['noise_distriburion'] if 'noise_distriburion' in parameter else np.ones(shape=(self.time_horizon,noise_dim))/noise_dim
@@ -28,8 +32,6 @@ class Model(object):
     def reward(self, state, action, noise, t):
         return min(max(state + action + noise, -self.reward_bound), self.reward_bound)
     
-    
-                
     def noise_generator(self, t=0):
         noise = np.random.choice(self.noise_space, 1, p=self.noise_distribution)[0]
         return noise, self.noise_distribution[noise]
