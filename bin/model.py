@@ -8,6 +8,8 @@ class Model(object):
         self.action_space = np.arange(action_dim, dtype=int)
         self.noise_space = np.arange(noise_dim, dtype=int)
         
+        self.model_name = 'default'
+        
         self.time_horizon = time_horizon   
         self.reward_bound = parameter['reward_bound'] if 'reward_bound' in parameter else 1e5
         
@@ -33,7 +35,7 @@ class Model(object):
         return min(max(state + action + noise, -self.reward_bound), self.reward_bound)
     
     def noise_generator(self, t=0):
-        noise = np.random.choice(self.noise_space, 1, p=self.noise_distribution)[0]
+        noise = np.random.choice(self.noise_space, 1, p=self.noise_distribution[t])[0]
         return noise, self.noise_distribution[noise]
         
     def acceptance_set(self, state, action, t=0):

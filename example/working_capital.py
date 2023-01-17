@@ -13,6 +13,8 @@ class Model_working_capital(Model):
         self.R_max = parameter['reward_bound']
         self.zeta = parameter['targer_level']
         
+        self.model_name = 'working_capital'
+        
         # compute w space based on R_max and p?
         self.w_dim = parameter['investment_level_dim']
         

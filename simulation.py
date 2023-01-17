@@ -25,12 +25,17 @@ if __name__ == '__main__':
     }
 
     # m = Model(5, 5, 5, 3, model_parameter)
-    # m = Model_working_capital(state_dim=5, action_dim=5, noise_dim=5, time_horizon=3, parameter=model_parameter)
-    m = Model_cash_order(state_dim=10, action_dim=10, noise_dim=10, time_horizon=24, parameter=model_parameter)
+    # m = Model_working_capital(state_dim=10, action_dim=10, noise_dim=10, time_horizon=12, parameter=model_parameter)
+    m = Model_cash_order(state_dim=10, action_dim=10, noise_dim=10, time_horizon=12, parameter=model_parameter)
     # m = Model_standard_capital(state_dim=5, action_dim=5, noise_dim=5, time_horizon=5, parameter=model_parameter)
     
     s = Solver(m, mdp_parameter)
     
-    s.backward()
+    s.backward(multiprocessing=True)
+    s.save_dp_solution(f'{m.model_name}_{mdp_parameter["measure"]}')
     
-    s.save_result(f'co_{mdp_parameter["measure"]}')
+    mdp_trajectories = []
+    policy = lambda state, t: s.optimal_action[t][state]
+    s.monte_carlo_trajectory(policy=policy, file_name=f'{m.model_name}_{mdp_parameter["measure"]}')
+    
+    

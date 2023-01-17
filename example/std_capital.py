@@ -12,6 +12,8 @@ class Model_standard_capital(Model_cash_order):
         self.a_dim = self.action_dim
         self.action_dim = self.a_dim * self.z_dim
         
+        self.model_name = 'standard_capital'
+        
         # new action space:
         self.action_space = np.arange(self.action_dim, dtype=int)
 

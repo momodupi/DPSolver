@@ -3,7 +3,9 @@ import pickle
 from tqdm import tqdm
 from multiprocessing import Pool
 from scipy.integrate import quad
-
+from functools import partial
+import dill
+from pathos.multiprocessing import ProcessingPool   
 
 class Solver(object):
     def __init__(self, model, mdp_parameter={'measure': 'neutral', 'parameter': None}) -> None:
@@ -21,7 +23,7 @@ class Solver(object):
         
         # set risk measure
         self.risk = self.risk_measure_selector(self.risk_measure)
-        
+        self.cpu_num = 4
 
     def risk_measure_selector(self, risk_measure):
         if risk_measure == 'CVaR':
@@ -54,7 +56,15 @@ class Solver(object):
         # CVAR = 1/a int_0^a var_r d r
         return (1/self.risk_parameter['alpha'])*quad(VAR, 0, self.risk_parameter['alpha'])[0]
         
-
+        
+    def vectorize(self, f, x, y):
+        f_partial = lambda _x: f(_x, y)
+        sub_x = np.array_split(x, self.cpu_num)
+        pool = ProcessingPool(nodes=self.cpu_num)
+        res = pool.map(f_partial, [_x for _x in sub_x])
+        return np.vstack(res)
+    
+    
     def backward(self, multiprocessing=False):
         # used for vectorization
         STATE_FIELD, ACTION_FIELD = self.model.state_space.reshape(self.model.state_dim, 1), self.model.action_space.reshape(1, self.model.action_dim)
@@ -70,7 +80,11 @@ class Solver(object):
             lambda n: 0 if self.model.acceptance_set(s, a, t) else unacceptance_value, 
             t
         )
-        value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
+        
+        if multiprocessing:
+            value_matrix = self.vectorize(np.vectorize(reward2go), STATE_FIELD, ACTION_FIELD)
+        else:
+            value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
         
         self.optimal_action[t] = value_matrix.argmax(axis=1)
         self.value_function[t] = value_matrix[self.model.state_space, self.action_history[t]]
@@ -80,7 +94,12 @@ class Solver(object):
                 lambda n: self.model.reward(s, a, n, t) + self.value_function[t+1][self.model.update(s, a, n, t)] if self.model.acceptance_set(s, a, t) else unacceptance_value, 
                 t
             )
-            value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
+            
+            if multiprocessing:
+                value_matrix = self.vectorize(np.vectorize(reward2go), STATE_FIELD, ACTION_FIELD)
+            else:
+                value_matrix = np.vectorize(reward2go)(STATE_FIELD, ACTION_FIELD)
+            
             
             if self.model.reward_flag:
                 self.optimal_action[t] = value_matrix.argmax(axis=1)
@@ -88,14 +107,14 @@ class Solver(object):
                 self.optimal_action[t] = value_matrix.argmin(axis=1)
             self.value_function[t] = value_matrix[self.model.state_space, self.action_history[t]]
 
-    def forward(self, initial_state, policy):
+    def forward(self, initial_state, policy, seed=0):
         state = initial_state
         t = 0
 
         for t in range(self.model.time_horizon):
             self.state_history[t] = state
             
-            action = policy(state)
+            action = policy(state, t)
             self.action_history[t] = action
             
             noise, prob = self.model.noise_generator(t)
@@ -107,18 +126,39 @@ class Solver(object):
             next_state = self.model.update(state, action, noise, t)
             state = next_state
             
-    def save_result(self, file_name='results'):
+    def monte_carlo_trajectory(self, policy, seeds=np.arange(10), file_name='results'):
+        self.trajectory = []
+        for seed in seeds:
+            self.state_history = np.zeros(self.model.time_horizon+1, dtype=int)
+            self.action_history = np.zeros(self.model.time_horizon+1, dtype=int)
+            self.noise_history = np.zeros(self.model.time_horizon+1, dtype=int)
+            self.reward_history = np.zeros(self.model.time_horizon+1)
+            
+            initial_state = self.model.state2index[(0,20)]
+            self.forward(initial_state=initial_state, policy=policy, seed=seed)
+            
+            self.trajectory.append({
+                'state': self.state_history,
+                'action': self.action_history,
+                'noise': self.noise_history,
+                'reward': self.reward_history,
+            })
+        with open(f'results/trj_{file_name}.pkl', 'wb') as pk:
+            pickle.dump(self.trajectory, pk, protocol=pickle.HIGHEST_PROTOCOL)
+        
+        return self.trajectory
+    
+    def save_dp_solution(self, file_name='results'):
         self.res_dict = {
             'risk': {'measure': self.risk_measure, 'parameter': self.risk_parameter},
             'time_horizon': self.model.time_horizon,
             'model': self.model,
-            'state': self.state_history,
-            'action': self.action_history,
-            'noise': self.noise_history,
-            'reward': self.reward_history,
             'value_function': self.value_function,
             'optimal_action': self.optimal_action,
         }
         
         with open(f'results/{file_name}.pkl', 'wb') as pk:
             pickle.dump(self.res_dict, pk, protocol=pickle.HIGHEST_PROTOCOL)
+            
+        print(self.res_dict)
+        return self.res_dict

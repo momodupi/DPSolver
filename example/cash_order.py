@@ -10,6 +10,7 @@ class Model_cash_order(Model):
         self.c = parameter['unit_order_cost']
         self.w0_dim = parameter['init_investment_level_dim']
         self.R_max = parameter['reward_bound']
+        self.model_name = 'cash_order'
         
         # compute w space based on R_max and p?
         self.w_dim = parameter['investment_level_dim']
