@@ -19,8 +19,8 @@ if __name__ == '__main__':
     }
     
     mdp_parameter = {
-        'measure': 'CVaR',
-        # 'measure': 'neutral',
+        # 'measure': 'CVaR',
+        'measure': 'neutral',
         'parameter': {'alpha': 0.6},
     }
 
@@ -36,6 +36,6 @@ if __name__ == '__main__':
     
     mdp_trajectories = []
     policy = lambda state, t: s.optimal_action[t][state]
-    s.monte_carlo_trajectory(policy=policy, file_name=f'{m.model_name}_{mdp_parameter["measure"]}')
+    s.monte_carlo_trajectory(policy=policy, seeds=[i for i in range(1000)], file_name=f'{m.model_name}_{mdp_parameter["measure"]}')
     
     

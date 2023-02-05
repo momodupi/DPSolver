@@ -66,6 +66,8 @@ class Solver(object):
     
     
     def backward(self, multiprocessing=False):
+        print('backward DP solver')
+        
         # used for vectorization
         STATE_FIELD, ACTION_FIELD = self.model.state_space.reshape(self.model.state_dim, 1), self.model.action_space.reshape(1, self.model.action_dim)
         
@@ -127,8 +129,9 @@ class Solver(object):
             state = next_state
             
     def monte_carlo_trajectory(self, policy, seeds=np.arange(10), file_name='results'):
+        print(f'MC: trj={len(seeds)}')
         self.trajectory = []
-        for seed in seeds:
+        for seed in tqdm(seeds):
             self.state_history = np.zeros(self.model.time_horizon+1, dtype=int)
             self.action_history = np.zeros(self.model.time_horizon+1, dtype=int)
             self.noise_history = np.zeros(self.model.time_horizon+1, dtype=int)
