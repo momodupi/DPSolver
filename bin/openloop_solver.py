@@ -154,5 +154,7 @@ if __name__ == "__main__":
     
     
     ol_solver = OpenLoopSolver(parameters=PARAMETER)
-    print(ol_solver.run())
+    res = ol_solver.run()
+    print(res)
+    print(res.ineqlin.marginals)
     
